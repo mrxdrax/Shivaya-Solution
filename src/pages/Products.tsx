@@ -227,11 +227,32 @@ const Products: React.FC = () => {
                           className="w-full text-left px-4 py-3 hover:bg-brand-warm-orange/10 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 cursor-pointer flex items-center gap-3"
                         >
                           <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden">
-                            <img 
-                              src={result.image} 
-                              alt={result.name}
-                              className="w-full h-full object-cover"
-                            />
+                            {result.type === 'product' ? (
+                              <ProductImage 
+                                productName={result.name}
+                                category={result.category || ''}
+                                subcategory={result.subcategory}
+                                className="w-full h-full"
+                                alt={result.name}
+                                showLoader={false}
+                              />
+                            ) : result.type === 'subcategory' ? (
+                              <ProductImage 
+                                productName={result.name}
+                                category={result.category || ''}
+                                className="w-full h-full"
+                                alt={result.name}
+                                showLoader={false}
+                              />
+                            ) : (
+                              <ProductImage 
+                                productName={result.name}
+                                category="category"
+                                className="w-full h-full"
+                                alt={result.name}
+                                showLoader={false}
+                              />
+                            )}
                           </div>
                           <div className="flex-grow">
                             <div className="font-medium text-gray-900 dark:text-white">{result.name}</div>
