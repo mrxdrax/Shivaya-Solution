@@ -191,24 +191,24 @@ const Products: React.FC = () => {
             </p>
           </div>
           <div className="relative">
-            <button
-              onClick={() => setSearchOpen(!searchOpen)}
+          <button
+            onClick={() => setSearchOpen(!searchOpen)}
               className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:bg-brand-warm-orange hover:text-white transition-all duration-300 search-icon cursor-pointer"
-              aria-label="Search"
-            >
-              <Search className="h-6 w-6" />
-            </button>
-            
+            aria-label="Search"
+          >
+            <Search className="h-6 w-6" />
+          </button>
+
             {/* Search Bar - Positioned absolutely */}
-            {searchOpen && (
+        {searchOpen && (
               <div className="absolute right-0 top-14 w-80 sm:w-96 z-50">
                 <div className="search-container bg-white dark:bg-gray-800 rounded-lg shadow-xl p-3">
-                  <input
-                    autoFocus
-                    type="text"
-                    placeholder="Search products, categories, or subcategories..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+            <input
+              autoFocus
+              type="text"
+              placeholder="Search products, categories, or subcategories..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
                     className="input-field text-base w-full"
                   />
                   
@@ -218,57 +218,75 @@ const Products: React.FC = () => {
                     </div>
                   )}
                   
-                  {searchResults.length > 0 && (
+            {searchResults.length > 0 && (
                     <div className="search-results max-h-96 overflow-y-auto mt-2">
-                      {searchResults.map((result, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleSearchResult(result)}
-                          className="w-full text-left px-4 py-3 hover:bg-brand-warm-orange/10 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 cursor-pointer flex items-center gap-3"
-                        >
-                          <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden">
-                            {result.type === 'product' ? (
-                              <ProductImage 
-                                productName={result.name}
-                                category={result.category || ''}
-                                subcategory={result.subcategory}
-                                className="w-full h-full"
-                                alt={result.name}
-                                showLoader={false}
-                              />
-                            ) : result.type === 'subcategory' ? (
-                              <ProductImage 
-                                productName={result.name}
-                                category={result.category || ''}
-                                className="w-full h-full"
-                                alt={result.name}
-                                showLoader={false}
-                              />
-                            ) : (
-                              <ProductImage 
-                                productName={result.name}
-                                category="category"
-                                className="w-full h-full"
-                                alt={result.name}
-                                showLoader={false}
-                              />
-                            )}
-                          </div>
-                          <div className="flex-grow">
-                            <div className="font-medium text-gray-900 dark:text-white">{result.name}</div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              {result.type === 'product' ? 
-                                `${result.subcategory}, ${result.category}` : 
-                                result.description
-                              }
-                            </div>
-                            <div className="text-xs text-brand-warm-orange capitalize mt-1">
-                              {result.type === 'category' ? 'Category' : 
-                               result.type === 'subcategory' ? 'Subcategory' : 'Product'}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
+                {searchResults.map((result, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSearchResult(result)}
+                    className="w-full text-left px-4 py-3 hover:bg-brand-warm-orange/10 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 cursor-pointer flex items-center gap-3"
+                  >
+                    <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden">
+                      {result.type === 'product' && result.product && (
+                        <ProductImage 
+                          product={result.product}
+                          className="w-full h-full"
+                          alt={result.name}
+                          showLoader={false}
+                        />
+                      )}
+                      {result.type === 'subcategory' && (
+                        <img 
+                          src={`https://source.unsplash.com/800x600/?${result.name.toLowerCase().replace(/\s+/g, ',')},${result.category?.toLowerCase().replace(/\s+/g, ',')}`}
+                          alt={result.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback image based on category
+                            const fallbackMap: Record<string, string> = {
+                              'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
+                              'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
+                              'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
+                              'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
+                              'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
+                            };
+                            e.currentTarget.src = fallbackMap[result.category || ''] || fallbackMap['Other Products'];
+                          }}
+                        />
+                      )}
+                      {result.type === 'category' && (
+                        <img 
+                          src={`https://source.unsplash.com/800x600/?${result.name.toLowerCase().replace(/\s+/g, ',')},product`}
+                          alt={result.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback image for categories
+                            const fallbackMap: Record<string, string> = {
+                              'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
+                              'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
+                              'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
+                              'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
+                              'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
+                            };
+                            e.currentTarget.src = fallbackMap[result.name] || fallbackMap['Other Products'];
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div className="flex-grow">
+                      <div className="font-medium text-gray-900 dark:text-white">{result.name}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {result.type === 'product' ? 
+                          `${result.subcategory}, ${result.category}` : 
+                          result.description
+                        }
+                      </div>
+                      <div className="text-xs text-brand-warm-orange capitalize mt-1">
+                        {result.type === 'category' ? 'Category' : 
+                          result.type === 'subcategory' ? 'Subcategory' : 'Product'}
+                      </div>
+                    </div>
+                  </button>
+                ))}
                     </div>
                   )}
                 </div>
@@ -306,19 +324,31 @@ const Products: React.FC = () => {
         {/* Category Layer */}
         {layer === 'category' && (
           <div className="grid-responsive">
-            {catalog.map((categoryData) => (
+            {catalog.map((categoryData, index) => (
               <div
                 key={categoryData.category}
                 onClick={() => goToCategory(categoryData.category)}
                 className="category-card scale-hover cursor-pointer"
               >
                 <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
-                  <ProductImage 
-                    productName={categoryData.category}
-                    category="category"
-                    className="w-full h-full"
-                    alt={categoryData.category}
-                  />
+                  <div className="w-full h-full">
+                    <img 
+                      src={`https://source.unsplash.com/800x600/?${categoryData.category.toLowerCase().replace(/\s+/g, ',')},product`}
+                      alt={categoryData.category}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        // Fallback image by category
+                        const fallbackMap: Record<string, string> = {
+                          'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
+                        };
+                        e.currentTarget.src = fallbackMap[categoryData.category] || fallbackMap['Other Products'];
+                      }}
+                    />
+                  </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                   <h2 className="absolute bottom-4 left-4 text-white text-xl font-bold">{categoryData.category}</h2>
                 </div>
@@ -337,19 +367,31 @@ const Products: React.FC = () => {
           <div className="grid-responsive">
             {catalog
               .find(cat => cat.category === selectedCategory)
-              ?.subcategories.map((subcategoryData) => (
+              ?.subcategories.map((subcategoryData, index) => (
                 <div
                   key={subcategoryData.name}
                   onClick={() => goToSubcategory(subcategoryData.name)}
                   className="subcategory-card scale-hover cursor-pointer"
                 >
                   <div className="relative h-40 w-full overflow-hidden rounded-t-lg">
-                    <ProductImage 
-                      productName={subcategoryData.name}
-                      category={selectedCategory}
-                      className="w-full h-full"
-                      alt={subcategoryData.name}
-                    />
+                    <div className="w-full h-full">
+                      <img 
+                        src={`https://source.unsplash.com/800x600/?${subcategoryData.name.toLowerCase().replace(/\s+/g, ',')},${selectedCategory?.toLowerCase().replace(/\s+/g, ',')}`}
+                        alt={subcategoryData.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          // Fallback image based on category
+                          const fallbackMap: Record<string, string> = {
+                            'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
+                            'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
+                            'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
+                            'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
+                            'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
+                          };
+                          e.currentTarget.src = fallbackMap[selectedCategory || ''] || fallbackMap['Other Products'];
+                        }}
+                      />
+                    </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                     <h2 className="absolute bottom-4 left-4 text-white text-lg font-bold">{subcategoryData.name}</h2>
                   </div>
@@ -367,12 +409,10 @@ const Products: React.FC = () => {
         {layer === 'product' && selectedCategory && selectedSubcategory && selectedProduct && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
             <div className="md:flex">
-              <div className="md:w-1/3">
+              <div className="md:w-1/3 h-64 md:h-auto relative">
                 <ProductImage 
-                  productName={selectedProduct.name}
-                  category={selectedCategory}
-                  subcategory={selectedSubcategory}
-                  className="w-full h-64 md:h-full"
+                  product={selectedProduct}
+                  className="w-full h-full"
                   alt={selectedProduct.name}
                 />
               </div>
@@ -389,7 +429,7 @@ const Products: React.FC = () => {
                     {selectedProduct.id && (
                       <p className="text-gray-500 dark:text-gray-400 text-sm">Product ID: {selectedProduct.id}</p>
                     )}
-                  </div>
+            </div>
                   <button 
                     onClick={() => {
                       setSelectedProduct(null);
@@ -493,8 +533,8 @@ const Products: React.FC = () => {
                       <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Minimum Order Quantity</h3>
                         <p className="text-gray-600 dark:text-gray-300">{selectedProduct.moq} units</p>
-                      </div>
-                    )}
+                          </div>
+                        )}
                     
                     {selectedProduct.packaging && (
                       <div className="mb-6">
@@ -537,7 +577,7 @@ const Products: React.FC = () => {
                   </button>
                 </div>
               </div>
-            </div>
+              </div>
           </div>
         )}
 
@@ -548,7 +588,7 @@ const Products: React.FC = () => {
               .find(cat => cat.category === selectedCategory)
               ?.subcategories
               .find(sub => sub.name === selectedSubcategory)
-              ?.products.map((product) => (
+              ?.products.map((product, index) => (
                 <div
                   key={product.id}
                   onClick={() => goToProduct(product)}
@@ -556,11 +596,10 @@ const Products: React.FC = () => {
                 >
                   <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
                     <ProductImage 
-                      productName={product.name}
-                      category={selectedCategory}
-                      subcategory={selectedSubcategory}
+                      product={product}
                       className="w-full h-full"
                       alt={product.name}
+                      showLoader={false}
                     />
                     {product.brand && (
                       <div className="absolute top-2 right-2 bg-brand-warm-orange text-white text-xs font-bold px-2 py-1 rounded-full">
