@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Eye } from 'lucide-react';
-import { Product } from '../../types';
+import { Product } from '../../hooks/useProducts';
 import { COMPANY_INFO } from '../../utils/constants';
+import ProductImage from './ProductImage';
 
 interface ProductCardProps {
   product: Product;
@@ -12,9 +13,46 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
   const handleWhatsAppInquiry = () => {
     const message = encodeURIComponent(
-      `Hi ${COMPANY_INFO.name}, I'm interested in "${product.product_name}". Please provide more details about pricing and availability.`
+      `Hi ${COMPANY_INFO.name}, I'm interested in "${product.name}". Please provide more details about pricing and availability.`
     );
     window.open(`https://wa.me/${COMPANY_INFO.whatsappNumber}?text=${message}`, '_blank');
+  };
+
+  // Format display of models if available
+  const formatModels = () => {
+    if (product.models && product.models.length > 0) {
+      const modelNumbers = product.models.map(model => model.model_no).join(', ');
+      return `Includes ${product.models.length} models: ${modelNumbers}`;
+    }
+    return null;
+  };
+
+  // Format variants if available
+  const formatVariants = () => {
+    if (product.variants) {
+      if (Array.isArray(product.variants) && typeof product.variants[0] === 'string') {
+        return `Variants: ${(product.variants as string[]).join(', ')}`;
+      }
+      // If variants are objects with more complex structure
+      return `Available in multiple variants`;
+    }
+    return null;
+  };
+
+  // Format sizes if available
+  const formatSizes = () => {
+    if (product.sizes && product.sizes.length > 0) {
+      return `Sizes: ${product.sizes.join(', ')}`;
+    }
+    return null;
+  };
+
+  // Format dimensions if available
+  const formatDimensions = () => {
+    if (product.outer_dimension) {
+      return `Dimensions: ${product.outer_dimension}`;
+    }
+    return null;
   };
 
   return (
@@ -24,15 +62,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
       transition={{ duration: 0.5, delay: index * 0.1 }}
       className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
     >
-      <div className="relative overflow-hidden">
-        <img
-          src={product.image_url}
-          alt={product.product_name}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+      <div className="relative h-48 overflow-hidden">
+        <ProductImage 
+          product={product}
+          className="w-full h-full"
+          alt={product.name}
         />
         <div className="absolute top-3 right-3">
           <span className="inline-block px-3 py-1 bg-brand-warm-orange text-white text-xs font-medium rounded-full">
-            {product.category.replace('-', ' ').toUpperCase()}
+            {product.subcategory.toUpperCase()}
           </span>
         </div>
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
@@ -48,11 +86,31 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
 
       <div className="p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          {product.product_name}
+          {product.name}
+          {product.brand && <span className="text-sm text-gray-500 ml-2">{product.brand}</span>}
         </h3>
         <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
           {product.description}
         </p>
+        
+        {/* Additional product details */}
+        <div className="mb-4 space-y-1">
+          {formatModels() && (
+            <p className="text-sm text-gray-500">{formatModels()}</p>
+          )}
+          {formatVariants() && (
+            <p className="text-sm text-gray-500">{formatVariants()}</p>
+          )}
+          {formatSizes() && (
+            <p className="text-sm text-gray-500">{formatSizes()}</p>
+          )}
+          {formatDimensions() && (
+            <p className="text-sm text-gray-500">{formatDimensions()}</p>
+          )}
+          {product.capacity_l && (
+            <p className="text-sm text-gray-500">Capacity: {product.capacity_l}L</p>
+          )}
+        </div>
         
         <div className="flex items-center justify-between">
           <button

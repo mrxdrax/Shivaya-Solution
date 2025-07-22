@@ -1,229 +1,587 @@
-// Static JSON file paths
-const JSON_FILES = [
-  '/data/products1.json',
-  '/data/products2.json'
-];
+import { Product } from '../hooks/useProducts';
 
-// --- CATEGORY & SUBCATEGORY STRUCTURE (PDF-accurate, editable image IDs) ---
-
-export const CATEGORY_IMAGE_MAP = {
+// --- CATEGORY & SUBCATEGORY STRUCTURE ---
+export const CATEGORY_IMAGE_MAP: Record<string, string> = {
   'Metal Pens': 'cat_metal_pens',
   'Household Products': 'cat_household_products',
   'Kitchen World': 'cat_kitchen_world',
-  'Plastic Crates': 'cat_plastic_crates',
-  'Dustbins & Waste Bins': 'cat_dustbins',
-  'Hotel Amenities': 'cat_hotel_amenities',
+  'Industrial Plastic Crates': 'cat_plastic_crates',
+  'Other Products': 'cat_other_products',
 };
 
-export const SUBCATEGORY_IMAGE_MAP = {
-  // Metal Pens
-  'Premium Ball Pens': 'sub_premium_ball_pens',
-  'Promotional Pens': 'sub_promotional_pens',
-  'Gift Sets': 'sub_gift_sets',
-  'Stylus Pens': 'sub_stylus_pens',
-  'Multi-function Pens': 'sub_multifunction_pens',
-  'Customized Engraving Pens': 'sub_customized_engraving_pens',
-  // Household Products
-  'Lunch Boxes': 'sub_lunch_boxes',
-  'Water Bottles': 'sub_water_bottles',
-  'Storage Containers': 'sub_storage_containers',
-  'Steelware': 'sub_steelware',
-  'Plasticware': 'sub_plasticware',
-  'Insulated Products': 'sub_insulated_products',
-  // Kitchen World
-  'Cookware Sets': 'sub_cookware_sets',
-  'Gas Lighters': 'sub_gas_lighters',
-  'Knives': 'sub_knives',
-  'Tawa/Kadai': 'sub_tawa_kadai',
-  'Pressure Cookers': 'sub_pressure_cookers',
-  'Choppers & Peelers': 'sub_choppers_peelers',
-  // Plastic Crates
-  '300x200 Series': 'sub_300x200_series',
-  '400x300 Series': 'sub_400x300_series',
-  '500x325 Series': 'sub_500x325_series',
-  '600x400 Series': 'sub_600x400_series',
-  'Perforated Crates': 'sub_perforated_crates',
-  'Custom & Partition Crates': 'sub_custom_partition_crates',
-  'Fruit & Vegetable Crates': 'sub_fruit_vegetable_crates',
-  // Dustbins & Waste Bins
-  'Small Bins (10–40L)': 'sub_small_bins',
-  'Medium Bins (40L)': 'sub_medium_bins',
-  'Big Bins (50–200L)': 'sub_big_bins',
-  'Extra Large (120L–1100L)': 'sub_extra_large_bins',
-  'Plastic Stand Dustbins': 'sub_plastic_stand_dustbins',
-  'Steel Dustbins': 'sub_steel_dustbins',
-  // Hotel Amenities
-  'Hotel Soaps': 'sub_hotel_soaps',
-  '20ml Toiletries': 'sub_20ml_toiletries',
-  'Dental Kits': 'sub_dental_kits',
-  'Slippers': 'sub_slippers',
-  'Shaving Kits': 'sub_shaving_kits',
-  'Shoe Shiners': 'sub_shoe_shiners',
-  'Glass Covers': 'sub_glass_covers',
-  'Urinal Screens': 'sub_urinal_screens',
-  'Guest Kits': 'sub_guest_kits',
-  'Laundry Bags': 'sub_laundry_bags',
-  'Toilet Seat Bands': 'sub_toilet_seat_bands',
+// Function to generate dynamic, contextually relevant image URLs
+export const generateProductImageUrl = (product: Product): string => {
+  // Create a query string from product details
+  const queryParts: string[] = [];
+  
+  // Add product name
+  if (product.name) {
+    queryParts.push(product.name.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ','));
+  }
+  
+  // Add category or material
+  if (product.category) {
+    queryParts.push(product.category.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ','));
+  } else if (product.material) {
+    queryParts.push(product.material.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ','));
+  }
+  
+  // Add series if available
+  if (product.series) {
+    queryParts.push(product.series.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ','));
+  }
+  
+  // Filter out any empty parts and join with commas
+  const queryString = queryParts.filter(part => part.trim() !== '').join(',');
+  
+  // Generate and return the image URL
+  return `https://source.unsplash.com/featured/?${queryString}`;
 };
 
-// --- IMAGE URLS (editable by ID) ---
-export const IMAGE_URLS: Record<string, string> = {
-  // Main categories
-  cat_metal_pens: 'https://images.pexels.com/photos/301703/pexels-photo-301703.jpeg',
-  cat_household_products: 'https://images.pexels.com/photos/4226924/pexels-photo-4226924.jpeg',
-  cat_kitchen_world: 'https://images.pexels.com/photos/4226792/pexels-photo-4226792.jpeg',
-  cat_plastic_crates: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg',
-  cat_dustbins: 'https://images.pexels.com/photos/2582937/pexels-photo-2582937.jpeg',
-  cat_hotel_amenities: 'https://images.pexels.com/photos/271897/pexels-photo-271897.jpeg',
-  // Metal Pens subcategories
-  sub_premium_ball_pens: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2',
-  sub_promotional_pens: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
-  sub_gift_sets: 'https://images.unsplash.com/photo-1464983953574-0892a716854b',
-  sub_stylus_pens: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308',
-  sub_multifunction_pens: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca',
-  sub_customized_engraving_pens: 'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99',
-  // Household Products subcategories
-  sub_lunch_boxes: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836',
-  sub_water_bottles: 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c',
-  sub_storage_containers: 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c',
-  sub_steelware: 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c',
-  sub_plasticware: 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c',
-  sub_insulated_products: 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c',
-  // Kitchen World subcategories
-  sub_cookware_sets: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836',
-  sub_gas_lighters: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308',
-  sub_knives: 'https://images.unsplash.com/photo-1464983953574-0892a716854b',
-  sub_tawa_kadai: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca',
-  sub_pressure_cookers: 'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99',
-  sub_choppers_peelers: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2',
-  // Plastic Crates subcategories
-  sub_300x200_series: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
-  sub_400x300_series: 'https://images.unsplash.com/photo-1464983953574-0892a716854b',
-  sub_500x325_series: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308',
-  sub_600x400_series: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca',
-  sub_perforated_crates: 'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99',
-  sub_custom_partition_crates: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2',
-  sub_fruit_vegetable_crates: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
-  // Dustbins & Waste Bins subcategories
-  sub_small_bins: 'https://images.unsplash.com/photo-1464983953574-0892a716854b',
-  sub_medium_bins: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308',
-  sub_big_bins: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca',
-  sub_extra_large_bins: 'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99',
-  sub_plastic_stand_dustbins: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2',
-  sub_steel_dustbins: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
-  // Hotel Amenities subcategories
-  sub_hotel_soaps: 'https://images.unsplash.com/photo-1464983953574-0892a716854b',
-  sub_20ml_toiletries: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308',
-  sub_dental_kits: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca',
-  sub_slippers: 'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99',
-  sub_shaving_kits: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2',
-  sub_shoe_shiners: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
-  sub_glass_covers: 'https://images.unsplash.com/photo-1464983953574-0892a716854b',
-  sub_urinal_screens: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308',
-  sub_guest_kits: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca',
-  sub_laundry_bags: 'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99',
-  sub_toilet_seat_bands: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2',
-};
-
-const FALLBACK_BANNER = 'https://via.placeholder.com/800x400/FF6B35/FFFFFF?text=Shivaya+Solutions';
-const FALLBACK_IMAGE = 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=Shivaya+Solutions';
-
-// Replace any brand name with Shivaya Solutions
-function replaceBrandNames(text: string): string {
-  if (!text) return text;
-  return text.replace(/(Saran Enterprises|ABC Exports|XYZ Industries|DEF Plastics|GHI Enterprises|JKL Stationery|MNO Cookware|PQR Gifts|RST Papers|UVW Kitchen|XYZ Industrial|ABC Furniture|LMN Electronics|OPQ Audio|RST Tech)/gi, 'Shivaya Solutions');
+// Data interfaces
+export interface ProductVariant {
+  model?: string;
+  name?: string;
+  size?: string;
+  color?: string;
+  capacity?: string | number;
+  description?: string;
+  outer_dimension?: string;
+  inner_dimension?: string;
+  capacity_l?: number;
 }
 
-// Get category and subcategory from product
-function categorizeProduct(product: any) {
-  const category = product.category || 'Other';
-  const subcategory = product.type || 'Other';
-  
-  const categoryConfig = CATEGORY_IMAGE_MAP[category];
-  const banner = IMAGE_URLS[categoryConfig] || FALLBACK_BANNER;
-  const image = SUBCATEGORY_IMAGE_MAP[subcategory] ? IMAGE_URLS[SUBCATEGORY_IMAGE_MAP[subcategory]] || FALLBACK_IMAGE : FALLBACK_IMAGE;
-  
-  return {
-    category,
-    subcategory,
-    banner,
-    image
-  };
+export interface SubcategoryData {
+  name: string;
+  products: Product[];
+  image?: string;
 }
+
+export interface CategoryData {
+  category: string;
+  subcategories: SubcategoryData[];
+  banner?: string;
+}
+
+// Helper function to generate a unique ID
+const generateId = (category: string, subcategory: string, name: string, index: number): string => {
+  const categoryPrefix = category.substring(0, 2).toUpperCase();
+  const subcategoryPrefix = subcategory.substring(0, 2).toUpperCase();
+  return `${categoryPrefix}-${subcategoryPrefix}-${index.toString().padStart(3, '0')}`;
+};
+
+// Helper to group products by name (for Metal Pens)
+const groupProductsByName = (products: any[]): Product[] => {
+  const groupedMap = new Map<string, any[]>();
+  
+  // Group products by name
+  products.forEach(product => {
+    if (!groupedMap.has(product.name)) {
+      groupedMap.set(product.name, []);
+    }
+    groupedMap.get(product.name)?.push(product);
+  });
+  
+  // Convert grouped map to products array
+  return Array.from(groupedMap.entries()).map(([name, models], index) => {
+    const modelNumbers = models.map((m: any) => m.model).join(', ');
+    const modelCount = models.length;
+    
+    return {
+      id: `MP-${name.substring(0, 2).toUpperCase()}-${index}`,
+      name: name,
+      category: 'Metal Pens',
+      subcategory: models[0].subcategory || models[0].series,
+      series: models[0].series,
+      material: 'Metal',
+      description: `Premium ${name} metal pen${modelCount > 1 ? `. Includes ${modelCount} models: ${modelNumbers}` : ''}`,
+      features: [
+        'Smooth writing experience',
+        'Premium metal construction',
+        'Professional design'
+      ],
+      models: models.map((m: any) => ({ model_no: m.model, name: m.name }))
+    };
+  });
+};
+
+// Load Metal Pens catalog
+const loadMetalPens = async (): Promise<CategoryData> => {
+  try {
+    const response = await fetch('/src/product-catalog/Dyna Metal Pen Catalog.json');
+    if (!response.ok) {
+      throw new Error('Failed to fetch Metal Pens catalog');
+    }
+    
+    const data = await response.json();
+    
+    // Transform data to fit our schema
+    const subcategories: SubcategoryData[] = data.map((series: any) => {
+      // Group products by name within each series
+      const groupedProducts = groupProductsByName(series.products.map((product: any) => ({
+        ...product,
+        series: series.series,
+        subcategory: series.series
+      })));
+      
+      return {
+        name: series.series,
+        products: groupedProducts
+      };
+    });
+    
+    return {
+      category: 'Metal Pens',
+      subcategories
+    };
+  } catch (error) {
+    console.error('Error loading Metal Pens catalog:', error);
+    return {
+      category: 'Metal Pens',
+      subcategories: []
+    };
+  }
+};
+
+// Load Kitchen World catalog
+const loadKitchenWorld = async (): Promise<CategoryData> => {
+  try {
+    const response = await fetch('/src/product-catalog/OJAS Kitchen World Catalogue Products List .json');
+    if (!response.ok) {
+      throw new Error('Failed to fetch Kitchen World catalog');
+    }
+    
+    const data = await response.json();
+    
+    // Group products by category
+    const categoryMap = new Map<string, any[]>();
+    
+    data.forEach((product: any) => {
+      const category = product.category;
+      if (!categoryMap.has(category)) {
+        categoryMap.set(category, []);
+      }
+      categoryMap.get(category)?.push(product);
+    });
+    
+    // Transform data to fit our schema
+    const subcategories: SubcategoryData[] = Array.from(categoryMap.entries()).map(([category, products], categoryIndex) => {
+      return {
+        name: category,
+        products: products.map((product, index) => {
+          // Create a product object with the appropriate structure
+          const newProduct: Product = {
+            id: `KW-${category.substring(0, 2).toUpperCase()}-${index}`,
+            name: product.name,
+            category: 'Kitchen World',
+            subcategory: category,
+            material: product.material || '',
+            description: product.description || '',
+          };
+          
+          // Add sizes if available
+          if (product.available_sizes) {
+            newProduct.sizes = product.available_sizes;
+          }
+          
+          // Add models if available
+          if (product.models) {
+            newProduct.models = product.models;
+          }
+          
+          // Add variants if available
+          if (product.variants) {
+            newProduct.variants = product.variants;
+          }
+          
+          // Add items if available (for Cookware Set)
+          if (product.items) {
+            const features: string[] = [];
+            Object.entries(product.items).forEach(([itemType, sizes]) => {
+              features.push(`${itemType}: ${Array.isArray(sizes) ? sizes.join(', ') : 'Various sizes'}`);
+            });
+            newProduct.features = features;
+          }
+          
+          // Add series if available (for Idli Pot)
+          if (product.series) {
+            const features: string[] = [];
+            Object.entries(product.series).forEach(([seriesName, sizes]) => {
+              features.push(`${seriesName}: ${Array.isArray(sizes) ? sizes.join(', ') : 'Various sizes'}`);
+            });
+            newProduct.features = features;
+          }
+          
+          return newProduct;
+        })
+      };
+    });
+    
+    return {
+      category: 'Kitchen World',
+      subcategories
+    };
+  } catch (error) {
+    console.error('Error loading Kitchen World catalog:', error);
+    return {
+      category: 'Kitchen World',
+      subcategories: []
+    };
+  }
+};
+
+// Load Household Products catalog
+const loadHouseholdProducts = async (): Promise<CategoryData> => {
+  try {
+    const response = await fetch('/src/product-catalog/HouseHold Products.json');
+    if (!response.ok) {
+      throw new Error('Failed to fetch Household Products catalog');
+    }
+    
+    const data = await response.json();
+    
+    // Transform data to fit our schema
+    const subcategories: SubcategoryData[] = data.map((category: any, categoryIndex: number) => {
+      return {
+        name: category.category,
+        products: category.products.map((product: any, productIndex: number) => {
+          // Create base product
+          const newProduct: Product = {
+            id: `HP-${category.category.substring(0, 2).toUpperCase()}-${productIndex}`,
+            name: product.series || `${category.category} Item ${productIndex + 1}`,
+            category: 'Household Products',
+            subcategory: category.category,
+            description: product.description || `${product.series || category.category} with various options and sizes`,
+          };
+          
+          // Add variants if available
+          if (product.variants) {
+            newProduct.variants = product.variants;
+          }
+          
+          // Add features if available
+          if (product.features) {
+            newProduct.features = product.features;
+          }
+          
+          // Add sizes if available
+          if (product.sizes) {
+            newProduct.sizes = product.sizes;
+          }
+          
+          // Add capacities if available
+          if (product.capacities) {
+            newProduct.capacities = product.capacities;
+          }
+          
+          return newProduct;
+        })
+      };
+    });
+    
+    return {
+      category: 'Household Products',
+      subcategories
+    };
+  } catch (error) {
+    console.error('Error loading Household Products catalog:', error);
+    return {
+      category: 'Household Products',
+      subcategories: []
+    };
+  }
+};
+
+// Load Industrial Plastic Crates catalog
+const loadPlasticCrates = async (): Promise<CategoryData> => {
+  try {
+    const response = await fetch('/src/product-catalog/Saran Enterprises catalog.json');
+    if (!response.ok) {
+      throw new Error('Failed to fetch Industrial Plastic Crates catalog');
+    }
+    
+    const data = await response.json();
+    
+    // Find the main category for industrial plastic crates
+    const cratesCategory = data.find((category: any) => 
+      category.category === 'Industrial Plastic Crates'
+    );
+    
+    if (!cratesCategory) {
+      throw new Error('Industrial Plastic Crates category not found');
+    }
+    
+    // Transform data to fit our schema
+    const subcategories: SubcategoryData[] = cratesCategory.series.map((series: any, seriesIndex: number) => {
+      return {
+        name: series.name,
+        products: series.variants.map((variant: any, variantIndex: number) => {
+          // Create base product
+          const newProduct: Product = {
+            id: `IPC-${series.name.substring(0, 2).toUpperCase()}-${variantIndex}`,
+            name: variant.name || `${series.name} - ${variant.outer_dimension || 'Standard Size'}`,
+            category: 'Industrial Plastic Crates',
+            subcategory: series.name,
+            description: variant.description || `Industrial plastic crate with dimensions: ${variant.outer_dimension}`,
+          };
+          
+          // Add dimensions and capacity if available
+          if (variant.outer_dimension) {
+            newProduct.outer_dimension = variant.outer_dimension;
+          }
+          
+          if (variant.inner_dimension) {
+            newProduct.inner_dimension = variant.inner_dimension;
+          }
+          
+          if (variant.capacity_l) {
+            newProduct.capacity_l = variant.capacity_l;
+          } else if (variant.capacity) {
+            newProduct.description += `. Capacity: ${variant.capacity}`;
+          }
+          
+          return newProduct;
+        })
+      };
+    });
+    
+    // Also include other categories from the Saran Enterprises catalog
+    const otherCategories = data.filter((category: any) => 
+      category.category !== 'Industrial Plastic Crates'
+    );
+    
+    otherCategories.forEach((category: any, categoryIndex: number) => {
+      // Prepare products based on the structure
+      let products: Product[] = [];
+      
+      if (category.products) {
+        products = category.products.map((product: any, productIndex: number) => {
+          return {
+            id: `OTH-${category.category.substring(0, 2).toUpperCase()}-${productIndex}`,
+            name: product.name || `${category.category} Item ${productIndex + 1}`,
+            category: 'Industrial Plastic Crates',
+            subcategory: category.category,
+            description: product.description || `${category.category} item with various specifications`,
+            outer_dimension: product.outer_dimension,
+            inner_dimension: product.inner_dimension,
+          };
+        });
+      } else if (category.variants) {
+        products = category.variants.map((variant: any, variantIndex: number) => {
+          return {
+            id: `OTH-${category.category.substring(0, 2).toUpperCase()}-${variantIndex}`,
+            name: `${category.category} - Type ${variantIndex + 1}`,
+            category: 'Industrial Plastic Crates',
+            subcategory: category.category,
+            description: variant.descriptions ? variant.descriptions.join('. ') : `${category.category} variant`,
+            features: variant.features
+          };
+        });
+      } else {
+        // If no products or variants, create a single product
+        products = [{
+          id: `OTH-${category.category.substring(0, 2).toUpperCase()}-0`,
+          name: category.category,
+          category: 'Industrial Plastic Crates',
+          subcategory: category.category,
+          description: category.features ? category.features.join('. ') : `${category.category} products`,
+          features: category.features
+        }];
+      }
+      
+      subcategories.push({
+        name: category.category,
+        products
+      });
+    });
+    
+    return {
+      category: 'Industrial Plastic Crates',
+      subcategories
+    };
+  } catch (error) {
+    console.error('Error loading Industrial Plastic Crates catalog:', error);
+    return {
+      category: 'Industrial Plastic Crates',
+      subcategories: []
+    };
+  }
+};
+
+// Load Other Products catalog
+const loadOtherProducts = async (): Promise<CategoryData> => {
+  try {
+    // Load all three sources
+    const otherResponse = await fetch('/src/product-catalog/other.json');
+    const videosResponse = await fetch('/src/product-catalog/videos.json');
+    const products1Response = await fetch('/data/products1.json');
+    
+    if (!otherResponse.ok || !videosResponse.ok || !products1Response.ok) {
+      throw new Error('Failed to fetch one or more Other Products catalogs');
+    }
+    
+    const otherData = await otherResponse.json();
+    const videosData = await videosResponse.json();
+    const products1Data = await products1Response.json();
+    
+    const subcategories: SubcategoryData[] = [];
+    
+    // Process Other data (Premium Cookware)
+    const otherProducts: Product[] = [];
+    if (otherData.products) {
+      otherData.products.forEach((product: any, index: number) => {
+        const newProduct: Product = {
+          id: `OTH-PC-${index}`,
+          name: product.type,
+          category: 'Other Products',
+          subcategory: otherData.category,
+          brand: otherData.brand,
+          series: otherData.series,
+          description: product.description || `${product.type} with premium tri-ply construction`,
+          features: otherData.key_features
+        };
+        
+        // Add sizes if available
+        if (product.sizes_cm) {
+          newProduct.sizes = product.sizes_cm.map((size: number) => `${size} cm`);
+        } else if (product.sizes) {
+          newProduct.sizes = product.sizes.map((size: any) => size.size);
+        }
+        
+        otherProducts.push(newProduct);
+      });
+    }
+    
+    subcategories.push({
+      name: otherData.category,
+      products: otherProducts
+    });
+    
+    // Process Videos data (Hotel Amenities)
+    videosData.forEach((category: any) => {
+      const products: Product[] = category.products.map((product: any, index: number) => {
+        const newProduct: Product = {
+          id: `OTH-${category.category.substring(0, 2).toUpperCase()}-${index}`,
+          name: product.name,
+          category: 'Other Products',
+          subcategory: category.category,
+          brand: category.brand || product.brand,
+          description: product.description || `${product.name} for hospitality industry`,
+        };
+        
+        // Add additional attributes
+        if (product.packaging) {
+          newProduct.packaging = typeof product.packaging === 'string' 
+            ? product.packaging 
+            : product.packaging.join(', ');
+        }
+        
+        if (product.moq) {
+          newProduct.moq = product.moq;
+        }
+        
+        if (product.features) {
+          newProduct.features = product.features;
+        }
+        
+        if (product.colors) {
+          newProduct.colors = product.colors;
+        }
+        
+        if (product.variants) {
+          newProduct.variants = product.variants;
+        }
+        
+        return newProduct;
+      });
+      
+      subcategories.push({
+        name: category.category,
+        products
+      });
+    });
+    
+    // Process Products1 data (various categories)
+    const products1Map = new Map<string, any[]>();
+    
+    products1Data.forEach((product: any) => {
+      if (!products1Map.has(product.type)) {
+        products1Map.set(product.type, []);
+      }
+      products1Map.get(product.type)?.push(product);
+    });
+    
+    products1Map.forEach((products, type) => {
+      const typeProducts: Product[] = products.map((product, index) => {
+        return {
+          id: `OTH-${type.substring(0, 2).toUpperCase()}-${index}`,
+          name: product.name,
+          category: 'Other Products',
+          subcategory: type,
+          description: product.description || `${product.name} - ${type}`,
+          tags: product.tags
+        };
+      });
+      
+      subcategories.push({
+        name: type,
+        products: typeProducts
+      });
+    });
+    
+    return {
+      category: 'Other Products',
+      subcategories
+    };
+  } catch (error) {
+    console.error('Error loading Other Products catalog:', error);
+    return {
+      category: 'Other Products',
+      subcategories: []
+    };
+  }
+};
 
 // Main loader function
 export async function loadProducts() {
   try {
-    // Fetch all JSON files
-    const promises = JSON_FILES.map(file => 
-      fetch(file)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`Failed to fetch ${file}`);
+    // Load all product categories in parallel
+    const [metalPens, kitchenWorld, householdProducts, plasticCrates, otherProducts] = await Promise.all([
+      loadMetalPens(),
+      loadKitchenWorld(),
+      loadHouseholdProducts(),
+      loadPlasticCrates(),
+      loadOtherProducts()
+    ]);
+    
+    // Combine all categories
+    const catalog: CategoryData[] = [
+      metalPens,
+      kitchenWorld,
+      householdProducts,
+      plasticCrates,
+      otherProducts
+    ];
+    
+    // Add dynamic image URLs
+    catalog.forEach((category: CategoryData) => {
+      const categoryImageKey = CATEGORY_IMAGE_MAP[category.category];
+      category.banner = `https://source.unsplash.com/featured/?${category.category.toLowerCase().replace(/\s+/g, ',')}`;
+      
+      category.subcategories.forEach((subcategory: SubcategoryData) => {
+        subcategory.image = `https://source.unsplash.com/featured/?${subcategory.name.toLowerCase().replace(/\s+/g, ',')},${category.category.toLowerCase().replace(/\s+/g, ',')}`;
+        
+        subcategory.products.forEach((product: Product) => {
+          if (!product.image) {
+            product.image = generateProductImageUrl(product);
           }
-          return response.json();
-        })
-        .catch(error => {
-          console.warn(`Error loading ${file}:`, error);
-          return [];
-        })
-    );
-
-    const results = await Promise.all(promises);
+        });
+      });
+    });
     
-    // Combine all products
-    let allProducts: any[] = [];
-    results.forEach(products => {
-      if (Array.isArray(products)) {
-        allProducts = allProducts.concat(products);
-      }
-    });
-
-    // Process products: replace brand names and categorize
-    const processedProducts = allProducts.map(product => {
-      const processed = { ...product };
-      
-      // Replace brand names in all text fields
-      processed.name = replaceBrandNames(processed.name);
-      processed.description = replaceBrandNames(processed.description);
-      
-      // Categorize product
-      const { category, subcategory, banner, image } = categorizeProduct(processed);
-      processed._category = category;
-      processed._subcategory = subcategory;
-      processed._banner = banner;
-      processed._image = image;
-      
-      return processed;
-    });
-
-    // Group by category and subcategory
-    const grouped: Record<string, { banner: string; subcategories: Record<string, { image: string; products: any[] }> }> = {};
-    
-    processedProducts.forEach(product => {
-      const cat = product._category;
-      const sub = product._subcategory;
-      
-      if (!grouped[cat]) {
-        grouped[cat] = { 
-          banner: product._banner, 
-          subcategories: {} 
-        };
-      }
-      
-      if (!grouped[cat].subcategories[sub]) {
-        grouped[cat].subcategories[sub] = { 
-          image: product._image, 
-          products: [] 
-        };
-      }
-      
-      grouped[cat].subcategories[sub].products.push(product);
-    });
-
-    return grouped;
+    return catalog;
   } catch (error) {
     console.error('Error loading products:', error);
-    return {};
+    throw error;
   }
 } 
