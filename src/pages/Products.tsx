@@ -1,23 +1,95 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ArrowLeft, Package, AlertCircle } from 'lucide-react';
-import { useProducts, Product } from '../hooks/useProducts';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import React, { useEffect, useState, useMemo } from 'react';
+import { loadProducts } from '../utils/productLoader';
+import { AlertCircle, Search, ArrowLeft } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import ProductImage from '../components/Products/ProductImage';
 
-function useDebounce(value: string, delay: number) {
-  const [debounced, setDebounced] = useState(value);
-  React.useEffect(() => {
-    const handler = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-  return debounced;
+// Helper to flatten and regroup products by new categories
+function regroupCatalog(rawCatalog: any): Record<string, any[]> {
+  // Helper for Dyna Metal Pen
+  const dynaPen: any[] = [];
+  // Helper for House Hold Products
+  const houseHold: any[] = [];
+  // Helper for Kitchen Appliances
+  const kitchen: any[] = [];
+  // Helper for Saran Enterprises
+  const saran: any[] = [];
+  // Helper for Other
+  const other: any[] = [];
+  // Helper for additional catalogs
+  const additional: Record<string, any[]> = {};
+
+  // Go through all categories and subcategories
+  Object.entries(rawCatalog).forEach(([cat, catObj]: [string, any]) => {
+    if (!catObj.subcategories) return;
+    Object.entries(catObj.subcategories).forEach(([sub, subObj]: [string, any]) => {
+      if (!subObj.products) return;
+      subObj.products.forEach((product: any) => {
+        // Dyna Metal Pen
+        if (
+          cat.toLowerCase().includes('dyna') ||
+          product.name?.toLowerCase().includes('dyna')
+        ) {
+          dynaPen.push(product);
+        }
+        // House Hold Products
+        else if (
+          cat.toLowerCase().includes('household') ||
+          cat.toLowerCase().includes('house hold') ||
+          product.name?.toLowerCase().includes('bucket') ||
+          product.name?.toLowerCase().includes('mug')
+        ) {
+          houseHold.push(product);
+        }
+        // Kitchen Appliances
+        else if (
+          cat.toLowerCase().includes('kitchen') ||
+          cat.toLowerCase().includes('cookware') ||
+          product.category?.toLowerCase().includes('cookware') ||
+          product.category?.toLowerCase().includes('pressure cooker') ||
+          product.name?.toLowerCase().includes('stove') ||
+          product.name?.toLowerCase().includes('kettle')
+        ) {
+          kitchen.push(product);
+        }
+        // Saran Enterprises
+        else if (
+          cat.toLowerCase().includes('saran') ||
+          product.name?.toLowerCase().includes('saran')
+        ) {
+          saran.push(product);
+        }
+        // Other
+        else if (
+          cat.toLowerCase().includes('other') ||
+          product.category?.toLowerCase().includes('other')
+        ) {
+          other.push(product);
+        }
+        // Additional catalogs (by file/category name)
+        else {
+          if (!additional[cat]) additional[cat] = [];
+          additional[cat].push(product);
+        }
+      });
+    });
+  });
+
+  return {
+    'Dyna Metal Pen': dynaPen,
+    'House Hold Products': houseHold,
+    'Kitchen Appliances': kitchen,
+    'Saran Enterprises': saran,
+    'Other': other,
+    ...additional,
+  };
 }
 
 // Helper function to create URL-friendly slugs
 const createSlug = (text: string): string => {
   return text
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
+    .replace(/[^ -\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
 };
@@ -28,41 +100,50 @@ const findBySlug = (items: any[], slug: string): any | undefined => {
 };
 
 const Products: React.FC = () => {
-  const { catalog, loading, error, searchProducts } = useProducts();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { categorySlug, subcategorySlug, productSlug } = useParams<{
-    categorySlug?: string;
-    subcategorySlug?: string;
-    productSlug?: string;
-  }>();
-
+  const [catalog, setCatalog] = useState<any>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [layer, setLayer] = useState<'category' | 'subcategory' | 'product'>('category');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 300);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const navigate = useNavigate();
+  const { categorySlug, subcategorySlug, productSlug } = useParams();
 
-  // Set up navigation based on URL params
+  // Load catalog data
   useEffect(() => {
-    if (loading || error || !catalog.length) return;
+    const loadCatalogData = async () => {
+      setLoading(true);
+      try {
+        const data = await loadProducts();
+        setCatalog(regroupCatalog(data));
+        setError(null);
+      } catch (err: any) {
+        setError('Failed to load products.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCatalogData();
+  }, []);
 
+  // Navigation logic (from upstream)
+  useEffect(() => {
+    if (loading || error || !catalog) return;
     if (categorySlug) {
-      const category = catalog.find(cat => createSlug(cat.category) === categorySlug);
+      const category = Object.keys(catalog).find(cat => createSlug(cat) === categorySlug);
       if (category) {
-        setSelectedCategory(category.category);
+        setSelectedCategory(category);
         setLayer('subcategory');
-
         if (subcategorySlug) {
-          const subcategory = category.subcategories.find(sub => createSlug(sub.name) === subcategorySlug);
+          const subcategory = catalog[category].find((sub: any) => createSlug(sub.name) === subcategorySlug);
           if (subcategory) {
             setSelectedSubcategory(subcategory.name);
             setLayer('product');
-
             if (productSlug) {
-              const product = subcategory.products.find(prod => createSlug(prod.name) === productSlug);
+              const product = subcategory.products.find((prod: any) => createSlug(prod.name) === productSlug);
               if (product) {
                 setSelectedProduct(product);
               }
@@ -73,14 +154,29 @@ const Products: React.FC = () => {
     }
   }, [catalog, categorySlug, subcategorySlug, productSlug, loading, error]);
 
-  // Search functionality
+  // Search functionality (from upstream, but adapted)
   const searchResults = useMemo(() => {
-    if (!debouncedSearch.trim()) return [];
-    
-    return searchProducts(debouncedSearch).slice(0, 15);
-  }, [debouncedSearch, searchProducts]);
+    if (!search.trim()) return [];
+    let results: any[] = [];
+    Object.entries(catalog).forEach(([cat, subcats]: any) => {
+      if (cat.toLowerCase().includes(search.toLowerCase())) {
+        results.push({ type: 'category', name: cat });
+      }
+      subcats.forEach((sub: any) => {
+        if (sub.name.toLowerCase().includes(search.toLowerCase())) {
+          results.push({ type: 'subcategory', name: sub.name, category: cat });
+        }
+        sub.products.forEach((prod: any) => {
+          if (prod.name && prod.name.toLowerCase().includes(search.toLowerCase())) {
+            results.push({ type: 'product', name: prod.name, category: cat, subcategory: sub.name, product: prod });
+          }
+        });
+      });
+    });
+    return results.slice(0, 15);
+  }, [search, catalog]);
 
-  // Navigation functions
+  // Navigation functions (from upstream, adapted)
   const goToCategory = (category: string) => {
     setSelectedCategory(category);
     setLayer('subcategory');
@@ -96,7 +192,7 @@ const Products: React.FC = () => {
     navigate(`/products/${createSlug(selectedCategory as string)}/${createSlug(subcategory)}`);
   };
 
-  const goToProduct = (product: Product) => {
+  const goToProduct = (product: any) => {
     setSelectedProduct(product);
     navigate(`/products/${createSlug(selectedCategory as string)}/${createSlug(selectedSubcategory as string)}/${createSlug(product.name)}`);
   };
@@ -140,7 +236,7 @@ const Products: React.FC = () => {
     setSearch('');
   };
 
-  // Breadcrumbs
+  // Breadcrumbs (from upstream, adapted)
   const breadcrumbs = [
     { label: 'Categories', onClick: () => { setLayer('category'); setSelectedCategory(null); setSelectedSubcategory(null); setSelectedProduct(null); navigate('/products'); } },
   ];
@@ -176,7 +272,9 @@ const Products: React.FC = () => {
     );
   }
 
-  // Rest of the component remains the same...
+  // Render UI (category/subcategory/product layers, search, breadcrumbs, etc.)
+  // ... (reuse/adapt the incoming UI, but keep search and navigation from upstream)
+
   return (
     <div className="pt-16 min-h-screen bg-brand-cream dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -191,102 +289,99 @@ const Products: React.FC = () => {
             </p>
           </div>
           <div className="relative">
-          <button
-            onClick={() => setSearchOpen(!searchOpen)}
+            <button
+              onClick={() => setSearchOpen(!searchOpen)}
               className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:bg-brand-warm-orange hover:text-white transition-all duration-300 search-icon cursor-pointer"
-            aria-label="Search"
-          >
-            <Search className="h-6 w-6" />
-          </button>
-
-            {/* Search Bar - Positioned absolutely */}
-        {searchOpen && (
+              aria-label="Search"
+            >
+              <Search className="h-6 w-6" />
+            </button>
+            {/* Search Bar */}
+            {searchOpen && (
               <div className="absolute right-0 top-14 w-80 sm:w-96 z-50">
                 <div className="search-container bg-white dark:bg-gray-800 rounded-lg shadow-xl p-3">
-            <input
-              autoFocus
-              type="text"
-              placeholder="Search products, categories, or subcategories..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Search products, categories, or subcategories..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                     className="input-field text-base w-full"
                   />
-                  
-                  {debouncedSearch.trim() !== '' && searchResults.length === 0 && (
+                  {search.trim() !== '' && searchResults.length === 0 && (
                     <div className="py-4 text-center text-gray-500 dark:text-gray-400">
-                      No results found for "{debouncedSearch}"
+                      No results found for "{search}"
                     </div>
                   )}
-                  
-            {searchResults.length > 0 && (
+                  {searchResults.length > 0 && (
                     <div className="search-results max-h-96 overflow-y-auto mt-2">
-                {searchResults.map((result, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSearchResult(result)}
-                    className="w-full text-left px-4 py-3 hover:bg-brand-warm-orange/10 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 cursor-pointer flex items-center gap-3"
-                  >
-                    <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden">
-                      {result.type === 'product' && result.product && (
-                        <ProductImage 
-                          product={result.product}
-                          className="w-full h-full"
-                          alt={result.name}
-                          showLoader={false}
-                        />
-                      )}
-                      {result.type === 'subcategory' && (
-                        <img 
-                          src={`https://source.unsplash.com/800x600/?${result.name.toLowerCase().replace(/\s+/g, ',')},${result.category?.toLowerCase().replace(/\s+/g, ',')}`}
-                          alt={result.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback image based on category
-                            const fallbackMap: Record<string, string> = {
-                              'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
-                              'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
-                              'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
-                              'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
-                              'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
-                            };
-                            e.currentTarget.src = fallbackMap[result.category || ''] || fallbackMap['Other Products'];
-                          }}
-                        />
-                      )}
-                      {result.type === 'category' && (
-                        <img 
-                          src={`https://source.unsplash.com/800x600/?${result.name.toLowerCase().replace(/\s+/g, ',')},product`}
-                          alt={result.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback image for categories
-                            const fallbackMap: Record<string, string> = {
-                              'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
-                              'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
-                              'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
-                              'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
-                              'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
-                            };
-                            e.currentTarget.src = fallbackMap[result.name] || fallbackMap['Other Products'];
-                          }}
-                        />
-                      )}
-                    </div>
-                    <div className="flex-grow">
-                      <div className="font-medium text-gray-900 dark:text-white">{result.name}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {result.type === 'product' ? 
-                          `${result.subcategory}, ${result.category}` : 
-                          result.description
-                        }
-                      </div>
-                      <div className="text-xs text-brand-warm-orange capitalize mt-1">
-                        {result.type === 'category' ? 'Category' : 
-                          result.type === 'subcategory' ? 'Subcategory' : 'Product'}
-                      </div>
-                    </div>
-                  </button>
-                ))}
+                      {searchResults.map((result, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSearchResult(result)}
+                          className="w-full text-left px-4 py-3 hover:bg-brand-warm-orange/10 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 cursor-pointer flex items-center gap-3"
+                        >
+                          <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden">
+                            {result.type === 'product' && result.product && (
+                              <ProductImage 
+                                product={result.product}
+                                className="w-full h-full"
+                                alt={result.name}
+                                showLoader={false}
+                              />
+                            )}
+                            {result.type === 'subcategory' && (
+                              <img 
+                                src={`https://source.unsplash.com/800x600/?${result.name.toLowerCase().replace(/\s+/g, ',')},${result.category?.toLowerCase().replace(/\s+/g, ',')}`}
+                                alt={result.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Fallback image based on category
+                                  const fallbackMap: Record<string, string> = {
+                                    'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
+                                  };
+                                  e.currentTarget.src = fallbackMap[result.category || ''] || fallbackMap['Other Products'];
+                                }}
+                              />
+                            )}
+                            {result.type === 'category' && (
+                              <img 
+                                src={`https://source.unsplash.com/800x600/?${result.name.toLowerCase().replace(/\s+/g, ',')},product`}
+                                alt={result.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Fallback image for categories
+                                  const fallbackMap: Record<string, string> = {
+                                    'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
+                                  };
+                                  e.currentTarget.src = fallbackMap[result.name] || fallbackMap['Other Products'];
+                                }}
+                              />
+                            )}
+                          </div>
+                          <div className="flex-grow">
+                            <div className="font-medium text-gray-900 dark:text-white">{result.name}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {result.type === 'product' ? 
+                                `${result.subcategory}, ${result.category}` : 
+                                result.description
+                              }
+                            </div>
+                            <div className="text-xs text-brand-warm-orange capitalize mt-1">
+                              {result.type === 'category' ? 'Category' : 
+                                result.type === 'subcategory' ? 'Subcategory' : 'Product'}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -294,7 +389,6 @@ const Products: React.FC = () => {
             )}
           </div>
         </div>
-
         {/* Breadcrumbs */}
         <div className="flex items-center space-x-2 mb-8">
           {layer !== 'category' && (
@@ -311,8 +405,9 @@ const Products: React.FC = () => {
               <button
                 onClick={crumb.onClick}
                 className="breadcrumb-item cursor-pointer"
+                title={crumb.label && crumb.label.trim() !== '' ? crumb.label : 'Breadcrumb'}
               >
-                {crumb.label}
+                {crumb.label && crumb.label.trim() !== '' ? crumb.label : 'Breadcrumb'}
               </button>
               {index < breadcrumbs.length - 1 && (
                 <span className="mx-2 text-gray-400">/</span>
@@ -320,21 +415,16 @@ const Products: React.FC = () => {
             </span>
           ))}
         </div>
-
-        {/* Category Layer */}
+        {/* Category/Subcategory/Product layers (reuse incoming UI, but navigation/search from upstream) */}
         {layer === 'category' && (
           <div className="grid-responsive">
-            {catalog.map((categoryData, index) => (
-              <div
-                key={categoryData.category}
-                onClick={() => goToCategory(categoryData.category)}
-                className="category-card scale-hover cursor-pointer"
-              >
+            {Object.entries(catalog).map(([category, subcategories], idx) => (
+              <div key={category} className="category-card scale-hover cursor-pointer" onClick={() => goToCategory(category)}>
                 <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
                   <div className="w-full h-full">
                     <img 
-                      src={`https://source.unsplash.com/800x600/?${categoryData.category.toLowerCase().replace(/\s+/g, ',')},product`}
-                      alt={categoryData.category}
+                      src={`https://source.unsplash.com/800x600/?${category.toLowerCase().replace(/\s+/g, ',')},product`}
+                      alt={category}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
                         // Fallback image by category
@@ -345,16 +435,16 @@ const Products: React.FC = () => {
                           'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
                           'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
                         };
-                        e.currentTarget.src = fallbackMap[categoryData.category] || fallbackMap['Other Products'];
+                        e.currentTarget.src = fallbackMap[category] || fallbackMap['Other Products'];
                       }}
                     />
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                  <h2 className="absolute bottom-4 left-4 text-white text-xl font-bold">{categoryData.category}</h2>
+                  <h2 className="absolute bottom-4 left-4 text-white text-xl font-bold">{category}</h2>
                 </div>
                 <div className="p-4 bg-white dark:bg-gray-800 rounded-b-lg">
                   <p className="text-gray-600 dark:text-gray-300">
-                    {categoryData.subcategories.length} subcategories
+                    {Array.isArray(subcategories) ? subcategories.length : 0} subcategories
                   </p>
                 </div>
               </div>
@@ -362,50 +452,46 @@ const Products: React.FC = () => {
           </div>
         )}
 
-        {/* Subcategory Layer */}
         {layer === 'subcategory' && selectedCategory && (
           <div className="grid-responsive">
-            {catalog
-              .find(cat => cat.category === selectedCategory)
-              ?.subcategories.map((subcategoryData, index) => (
-                <div
-                  key={subcategoryData.name}
-                  onClick={() => goToSubcategory(subcategoryData.name)}
-                  className="subcategory-card scale-hover cursor-pointer"
-                >
-                  <div className="relative h-40 w-full overflow-hidden rounded-t-lg">
-                    <div className="w-full h-full">
-                      <img 
-                        src={`https://source.unsplash.com/800x600/?${subcategoryData.name.toLowerCase().replace(/\s+/g, ',')},${selectedCategory?.toLowerCase().replace(/\s+/g, ',')}`}
-                        alt={subcategoryData.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          // Fallback image based on category
-                          const fallbackMap: Record<string, string> = {
-                            'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
-                            'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
-                            'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
-                            'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
-                            'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
-                          };
-                          e.currentTarget.src = fallbackMap[selectedCategory || ''] || fallbackMap['Other Products'];
-                        }}
-                      />
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                    <h2 className="absolute bottom-4 left-4 text-white text-lg font-bold">{subcategoryData.name}</h2>
+            {catalog[selectedCategory]?.map((subcategoryData: any, index: number) => (
+              <div
+                key={subcategoryData.name}
+                onClick={() => goToSubcategory(subcategoryData.name)}
+                className="subcategory-card scale-hover cursor-pointer"
+              >
+                <div className="relative h-40 w-full overflow-hidden rounded-t-lg">
+                  <div className="w-full h-full">
+                    <img 
+                      src={`https://source.unsplash.com/800x600/?${subcategoryData.name.toLowerCase().replace(/\s+/g, ',')},${selectedCategory?.toLowerCase().replace(/\s+/g, ',')}`}
+                      alt={subcategoryData.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        // Fallback image based on category
+                        const fallbackMap: Record<string, string> = {
+                          'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
+                        };
+                        e.currentTarget.src = fallbackMap[selectedCategory || ''] || fallbackMap['Other Products'];
+                      }}
+                    />
                   </div>
-                  <div className="p-4 bg-white dark:bg-gray-800 rounded-b-lg">
-                    <p className="text-gray-600 dark:text-gray-300">
-                      {subcategoryData.products.length} products
-                    </p>
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                  <h2 className="absolute bottom-4 left-4 text-white text-lg font-bold">{subcategoryData.name}</h2>
                 </div>
-              ))}
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-b-lg">
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {subcategoryData.products.length} products
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Product Layer - Selected Product View */}
         {layer === 'product' && selectedCategory && selectedSubcategory && selectedProduct && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
             <div className="md:flex">
@@ -436,6 +522,7 @@ const Products: React.FC = () => {
                       navigate(`/products/${createSlug(selectedCategory)}/${createSlug(selectedSubcategory)}`);
                     }}
                     className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
+                    title="Back"
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </button>
@@ -451,7 +538,7 @@ const Products: React.FC = () => {
                       <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Features</h3>
                         <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 product-features">
-                          {selectedProduct.features.map((feature, index) => (
+                          {selectedProduct.features.map((feature: string, index: number) => (
                             <li key={index}>{feature}</li>
                           ))}
                         </ul>
@@ -469,7 +556,7 @@ const Products: React.FC = () => {
                       <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Available Sizes</h3>
                         <div className="flex flex-wrap gap-2">
-                          {selectedProduct.sizes.map((size, index) => (
+                          {selectedProduct.sizes.map((size: string, index: number) => (
                             <span key={index} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">{size}</span>
                           ))}
                         </div>
@@ -480,7 +567,7 @@ const Products: React.FC = () => {
                       <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Available Colors</h3>
                         <div className="flex flex-wrap gap-2">
-                          {selectedProduct.colors.map((color, index) => (
+                          {selectedProduct.colors.map((color: string, index: number) => (
                             <span key={index} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">{color}</span>
                           ))}
                         </div>
@@ -493,7 +580,7 @@ const Products: React.FC = () => {
                       <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Available Variants</h3>
                         <ul className="list-disc list-inside text-gray-600 dark:text-gray-300">
-                          {Array.isArray(selectedProduct.variants) && selectedProduct.variants.map((variant, index) => (
+                          {Array.isArray(selectedProduct.variants) && selectedProduct.variants.map((variant: any, index: number) => (
                             <li key={index}>{typeof variant === 'string' ? variant : variant.name || variant.size || variant.color || variant.model || JSON.stringify(variant).replace(/[{}"]/g, '')}</li>
                           ))}
                         </ul>
@@ -504,7 +591,7 @@ const Products: React.FC = () => {
                       <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Available Models</h3>
                         <ul className="list-disc list-inside text-gray-600 dark:text-gray-300">
-                          {selectedProduct.models.map((model, index) => (
+                          {selectedProduct.models.map((model: any, index: number) => (
                             <li key={index}><span className="font-medium">{model.model_no}</span>: {model.name}</li>
                           ))}
                         </ul>
@@ -515,7 +602,7 @@ const Products: React.FC = () => {
                       <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Available Capacities</h3>
                         <div className="flex flex-wrap gap-2">
-                          {selectedProduct.capacities.map((capacity, index) => (
+                          {selectedProduct.capacities.map((capacity: string, index: number) => (
                             <span key={index} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">{capacity}</span>
                           ))}
                         </div>
@@ -577,18 +664,16 @@ const Products: React.FC = () => {
                   </button>
                 </div>
               </div>
-              </div>
+            </div>
           </div>
         )}
 
         {/* Product Layer - Product Cards */}
         {layer === 'product' && selectedCategory && selectedSubcategory && !selectedProduct && (
           <div className="grid-responsive">
-            {catalog
-              .find(cat => cat.category === selectedCategory)
-              ?.subcategories
-              .find(sub => sub.name === selectedSubcategory)
-              ?.products.map((product, index) => (
+            {catalog[selectedCategory]
+              ?.find((sub: any) => sub.name === selectedSubcategory)
+              ?.products.map((product: any, index: number) => (
                 <div
                   key={product.id}
                   onClick={() => goToProduct(product)}

@@ -1,4 +1,16 @@
+<<<<<<< Updated upstream
 import { Product } from '../hooks/useProducts';
+=======
+// Static JSON file paths
+const JSON_FILES = [
+  '/src/product-catalog/products1.json',
+  '/src/product-catalog/OJAS Kitchen World Catalogue Products List .json',
+  '/src/product-catalog/other.json',
+  '/src/product-catalog/Saran Enterprises catalog.json',
+  '/src/product-catalog/HouseHold Products.json',
+  // Add more files here if needed
+];
+>>>>>>> Stashed changes
 
 // --- CATEGORY & SUBCATEGORY STRUCTURE ---
 export const CATEGORY_IMAGE_MAP: Record<string, string> = {
