@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, FormEvent } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, User, MessageSquare, Send, CheckCircle, AlertCircle } from 'lucide-react';
-import { sendContactEmailFormSubmit } from '../../services/emailService';
+import { Mail, User, MessageSquare, Send, CheckCircle, AlertCircle, Phone, FileText } from 'lucide-react';
 import { ContactFormData } from '../../types';
 
 const ContactForm: React.FC = () => {
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
     email: '',
-    message: ''
+    mobile: '',
+    message: '',
+    productInterest: ''
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -21,34 +22,61 @@ const ContactForm: React.FC = () => {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const emailSent = await sendContactEmailFormSubmit(formData);
+      // Create FormData object for submission
+      const formSubmitData = new FormData();
       
-      if (emailSent) {
-        setSuccess(true);
-        setFormData({
-          name: '',
-          email: '',
-          message: ''
-        });
-        
-        // Reset success message after 5 seconds
-        setTimeout(() => {
-          setSuccess(false);
-        }, 5000);
-      } else {
-        setError('Failed to send message. Please try again or contact us directly.');
-      }
-    } catch (error) {
-      setError('An error occurred. Please try again.');
-    }
+      // Add form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value) {
+          formSubmitData.append(key, value);
+        }
+      });
+      
+      // Add FormSubmit specific fields
+      formSubmitData.append('_subject', 'New Contact Form Submission - Shivaya Solutions');
+      formSubmitData.append('_template', 'table');
+      formSubmitData.append('_captcha', 'false');
+      
+      // Send data using fetch
+      const response = await fetch('https://formsubmit.co/guptahariom049@gmail.com', {
+        method: 'POST',
+        body: formSubmitData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
 
-    setLoading(false);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      // Success
+      setSuccess(true);
+      setFormData({
+        name: '',
+        email: '',
+        mobile: '',
+        message: '',
+        productInterest: ''
+      });
+      
+      // Reset success message after 5 seconds
+      setTimeout(() => {
+        setSuccess(false);
+      }, 5000);
+      
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setError('Failed to send message. Please try again or contact us directly.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -85,9 +113,12 @@ const ContactForm: React.FC = () => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Honeypot anti-spam field (hidden from real users) */}
+        <input type="text" name="_honey" style={{ display: 'none' }} />
+        
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Full Name
+            Full Name *
           </label>
           <div className="relative">
             <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -106,7 +137,7 @@ const ContactForm: React.FC = () => {
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Email Address
+            Email Address *
           </label>
           <div className="relative">
             <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -122,10 +153,46 @@ const ContactForm: React.FC = () => {
             />
           </div>
         </div>
+        
+        <div>
+          <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Phone Number
+          </label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <input
+              type="tel"
+              id="mobile"
+              name="mobile"
+              value={formData.mobile}
+              onChange={handleInputChange}
+              className="input-field pl-10"
+              placeholder="Enter your phone number (optional)"
+            />
+          </div>
+        </div>
+        
+        <div>
+          <label htmlFor="productInterest" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Subject
+          </label>
+          <div className="relative">
+            <FileText className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              id="productInterest"
+              name="productInterest"
+              value={formData.productInterest}
+              onChange={handleInputChange}
+              className="input-field pl-10"
+              placeholder="What products are you interested in? (optional)"
+            />
+          </div>
+        </div>
 
         <div>
           <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Message
+            Message *
           </label>
           <div className="relative">
             <MessageSquare className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
