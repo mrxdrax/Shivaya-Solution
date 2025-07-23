@@ -13,10 +13,10 @@ function App() {
 
   return (
     <Router>
-      <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''}`} data-theme={theme}>
-        <div className="min-h-screen transition-colors relative">
+      <div className={`${theme === 'dark' ? 'dark' : ''}`} data-theme={theme}>
+        <div className="min-h-screen bg-brand-cream dark:bg-brand-dark-bg transition-colors duration-300">
           <Header />
-          <main>
+          <main className="pt-16">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/products" element={<Products />} />
