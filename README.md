@@ -108,5 +108,5 @@ This project was developed as a paid engagement for Shivaya Solution, with all d
 
 ---
 
-© 2023 Shivaya Solution. All rights reserved.
+© 2025 Shivaya Solution. All rights reserved.
 
