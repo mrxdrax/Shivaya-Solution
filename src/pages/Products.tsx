@@ -4,6 +4,7 @@ import { useProducts, Product } from '../hooks/useProducts';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import ProductImage from '../components/Products/ProductImage';
 import SearchBar from '../components/Products/SearchBar';
+import { getCategoryImage, getSubcategoryImage } from '../utils/imageUtils';
 
 function useDebounce(value: string, delay: number) {
   const [debounced, setDebounced] = useState(value);
@@ -244,7 +245,7 @@ const Products: React.FC = () => {
                 <div className="h-40 overflow-hidden relative">
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
                   <img
-                    src={`https://source.unsplash.com/featured/?${category.category.toLowerCase().replace(/\s+/g, ',')}`}
+                    src={getCategoryImage(category.category)}
                     alt={category.category}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -282,7 +283,7 @@ const Products: React.FC = () => {
                     <div className="h-40 overflow-hidden relative">
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
                       <img
-                        src={subcategory.image || `https://source.unsplash.com/featured/?${subcategory.name.toLowerCase().replace(/\s+/g, ',')},${selectedCategory.toLowerCase().replace(/\s+/g, ',')}`}
+                        src={getSubcategoryImage(selectedCategory, subcategory.name)}
                         alt={subcategory.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
