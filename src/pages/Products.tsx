@@ -1,10 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Package, AlertCircle, Search } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { loadProducts } from '../utils/productLoader';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { AlertCircle, Search, ArrowLeft } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import ProductImage from '../components/Products/ProductImage';
-import SearchBar from '../components/Products/SearchBar';
-import { getCategoryImage, getSubcategoryImage } from '../utils/imageUtils';
 
 // Helper to flatten and regroup products by new categories
 function regroupCatalog(rawCatalog: any): Record<string, any[]> {
@@ -91,7 +89,7 @@ function regroupCatalog(rawCatalog: any): Record<string, any[]> {
 const createSlug = (text: string): string => {
   return text
     .toLowerCase()
-    .replace(/[^ -\w\s-]/g, '')
+    .replace(/[^ -\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
 };
@@ -196,24 +194,21 @@ const Products: React.FC = () => {
 
   const goToProduct = (product: any) => {
     setSelectedProduct(product);
-    navigate(`/products/${createSlug(product.category)}/${createSlug(product.subcategory)}/${createSlug(product.name)}`);
+    navigate(`/products/${createSlug(selectedCategory as string)}/${createSlug(selectedSubcategory as string)}/${createSlug(product.name)}`);
   };
-  
+
   const goBack = () => {
-    if (layer === 'subcategory') {
+    if (layer === 'product' && selectedProduct) {
+      setSelectedProduct(null);
+      navigate(`/products/${createSlug(selectedCategory as string)}/${createSlug(selectedSubcategory as string)}`);
+    } else if (layer === 'product') {
+      setLayer('subcategory');
+      setSelectedSubcategory(null);
+      navigate(`/products/${createSlug(selectedCategory as string)}`);
+    } else if (layer === 'subcategory') {
       setLayer('category');
       setSelectedCategory(null);
       navigate('/products');
-    } else if (layer === 'product') {
-      if (!selectedProduct) {
-        setLayer('subcategory');
-        setSelectedSubcategory(null);
-        navigate(`/products/${createSlug(selectedCategory as string)}`);
-      } else {
-        // If viewing a specific product, go back to its subcategory
-        setSelectedProduct(null);
-        navigate(`/products/${createSlug(selectedCategory as string)}/${createSlug(selectedSubcategory as string)}`);
-      }
     }
   };
 
@@ -251,10 +246,10 @@ const Products: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="pt-16 min-h-screen bg-brand-cream dark:bg-brand-dark-bg flex items-center justify-center">
+      <div className="pt-16 min-h-screen bg-brand-cream dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="loading-spinner mx-auto mb-4"></div>
-          <p className="text-light-secondary dark:text-dark-secondary text-lg">Loading product catalog...</p>
+          <p className="text-gray-600 dark:text-gray-300 text-lg">Loading product catalog...</p>
         </div>
       </div>
     );
@@ -262,10 +257,10 @@ const Products: React.FC = () => {
 
   if (error) {
     return (
-      <div className="pt-16 min-h-screen bg-brand-cream dark:bg-brand-dark-bg flex items-center justify-center">
+      <div className="pt-16 min-h-screen bg-brand-cream dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <p className="text-light-secondary dark:text-dark-secondary text-lg">{error}</p>
+          <p className="text-gray-600 dark:text-gray-300 text-lg">{error}</p>
           <button 
             className="mt-4 px-4 py-2 bg-brand-warm-orange text-white rounded-md hover:bg-brand-warm-orange/80"
             onClick={() => window.location.reload()}
@@ -281,15 +276,15 @@ const Products: React.FC = () => {
   // ... (reuse/adapt the incoming UI, but keep search and navigation from upstream)
 
   return (
-    <div className="pt-16 min-h-screen bg-brand-cream dark:bg-brand-dark-bg">
+    <div className="pt-16 min-h-screen bg-brand-cream dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-light-primary dark:text-dark-primary mb-2">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
               Product Catalog
             </h1>
-            <p className="text-light-secondary dark:text-dark-secondary">
+            <p className="text-gray-600 dark:text-gray-300">
               Explore our comprehensive range of quality products
             </p>
           </div>
@@ -337,16 +332,38 @@ const Products: React.FC = () => {
                             )}
                             {result.type === 'subcategory' && (
                               <img 
-                                src={getSubcategoryImage(result.category, result.name)}
+                                src={`https://source.unsplash.com/800x600/?${result.name.toLowerCase().replace(/\s+/g, ',')},${result.category?.toLowerCase().replace(/\s+/g, ',')}`}
                                 alt={result.name}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Fallback image based on category
+                                  const fallbackMap: Record<string, string> = {
+                                    'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
+                                  };
+                                  e.currentTarget.src = fallbackMap[result.category || ''] || fallbackMap['Other Products'];
+                                }}
                               />
                             )}
                             {result.type === 'category' && (
                               <img 
-                                src={getCategoryImage(result.name)}
+                                src={`https://source.unsplash.com/800x600/?${result.name.toLowerCase().replace(/\s+/g, ',')},product`}
                                 alt={result.name}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Fallback image for categories
+                                  const fallbackMap: Record<string, string> = {
+                                    'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
+                                    'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
+                                  };
+                                  e.currentTarget.src = fallbackMap[result.name] || fallbackMap['Other Products'];
+                                }}
                               />
                             )}
                           </div>
@@ -377,7 +394,7 @@ const Products: React.FC = () => {
           {layer !== 'category' && (
             <button
               onClick={goBack}
-              className="p-2 rounded-full bg-white dark:bg-brand-dark-card shadow-md hover:bg-brand-warm-orange hover:text-white transition-all duration-300 mr-2"
+              className="p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:bg-brand-warm-orange hover:text-white transition-all duration-300 mr-2 back-button cursor-pointer"
               aria-label="Back"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -387,7 +404,7 @@ const Products: React.FC = () => {
             <span key={index} className="flex items-center">
               <button
                 onClick={crumb.onClick}
-                className="text-brand-warm-orange hover:underline transition-colors font-medium"
+                className="breadcrumb-item cursor-pointer"
                 title={crumb.label && crumb.label.trim() !== '' ? crumb.label : 'Breadcrumb'}
               >
                 {crumb.label && crumb.label.trim() !== '' ? crumb.label : 'Breadcrumb'}
@@ -400,24 +417,33 @@ const Products: React.FC = () => {
         </div>
         {/* Category/Subcategory/Product layers (reuse incoming UI, but navigation/search from upstream) */}
         {layer === 'category' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid-responsive">
             {Object.entries(catalog).map(([category, subcategories], idx) => (
-              <div key={category} className="bg-white dark:bg-brand-dark-card rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition-transform hover:-translate-y-1 hover:shadow-xl" onClick={() => goToCategory(category)}>
-                <div className="h-40 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
-                  <img
-                    src={getCategoryImage(category)}
-                    alt={category}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback for failed image loads
-                      e.currentTarget.src = "https://images.unsplash.com/photo-1557801200-2f9769722036?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZHVjdHN8ZW58MHx8MHx8&auto=format&fit=crop&w=800&h=400&q=60";
-                    }}
-                  />
-                  <h2 className="absolute bottom-3 left-3 text-white text-xl font-bold z-20">{category}</h2>
+              <div key={category} className="category-card scale-hover cursor-pointer" onClick={() => goToCategory(category)}>
+                <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
+                  <div className="w-full h-full">
+                    <img 
+                      src={`https://source.unsplash.com/800x600/?${category.toLowerCase().replace(/\s+/g, ',')},product`}
+                      alt={category}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        // Fallback image by category
+                        const fallbackMap: Record<string, string> = {
+                          'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
+                        };
+                        e.currentTarget.src = fallbackMap[category] || fallbackMap['Other Products'];
+                      }}
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                  <h2 className="absolute bottom-4 left-4 text-white text-xl font-bold">{category}</h2>
                 </div>
-                <div className="p-4">
-                  <p className="text-light-secondary dark:text-dark-secondary">
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-b-lg">
+                  <p className="text-gray-600 dark:text-gray-300">
                     {Array.isArray(subcategories) ? subcategories.length : 0} subcategories
                   </p>
                 </div>
@@ -427,197 +453,279 @@ const Products: React.FC = () => {
         )}
 
         {layer === 'subcategory' && selectedCategory && (
-          <div>
-            <h2 className="text-2xl font-bold text-light-primary dark:text-dark-primary mb-6">
-              {selectedCategory} Subcategories
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {catalog[selectedCategory]?.map((subcategoryData: any, index: number) => (
-                <div 
-                  key={subcategoryData.name} 
-                  onClick={() => goToSubcategory(subcategoryData.name)}
-                  className="bg-white dark:bg-brand-dark-card rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition-transform hover:-translate-y-1 hover:shadow-xl"
-                >
-                  <div className="h-40 overflow-hidden relative">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
-                    <img
-                      src={getSubcategoryImage(selectedCategory, subcategoryData.name)}
+          <div className="grid-responsive">
+            {catalog[selectedCategory]?.map((subcategoryData: any, index: number) => (
+              <div
+                key={subcategoryData.name}
+                onClick={() => goToSubcategory(subcategoryData.name)}
+                className="subcategory-card scale-hover cursor-pointer"
+              >
+                <div className="relative h-40 w-full overflow-hidden rounded-t-lg">
+                  <div className="w-full h-full">
+                    <img 
+                      src={`https://source.unsplash.com/800x600/?${subcategoryData.name.toLowerCase().replace(/\s+/g, ',')},${selectedCategory?.toLowerCase().replace(/\s+/g, ',')}`}
                       alt={subcategoryData.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
-                        // Fallback for failed image loads
-                        e.currentTarget.src = "https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8OXx8cHJvZHVjdHN8ZW58MHx8MHx8&auto=format&fit=crop&w=800&h=400&q=60";
+                        // Fallback image based on category
+                        const fallbackMap: Record<string, string> = {
+                          'Metal Pens': 'https://images.unsplash.com/photo-1583485088034-697b5bc1b13a?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Kitchen World': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Household Products': 'https://images.unsplash.com/photo-1584255014406-2a68ea38e48c?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Industrial Plastic Crates': 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&h=600&q=80',
+                          'Other Products': 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&h=600&q=80'
+                        };
+                        e.currentTarget.src = fallbackMap[selectedCategory || ''] || fallbackMap['Other Products'];
                       }}
                     />
-                    <h3 className="absolute bottom-3 left-3 text-white text-xl font-bold z-20">{subcategoryData.name}</h3>
                   </div>
-                  <div className="p-4">
-                    <p className="text-light-secondary dark:text-dark-secondary">
-                      {subcategoryData.products.length} products
-                    </p>
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                  <h2 className="absolute bottom-4 left-4 text-white text-lg font-bold">{subcategoryData.name}</h2>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {layer === 'product' && selectedCategory && selectedSubcategory && !selectedProduct && (
-          <div>
-            <h2 className="text-2xl font-bold text-light-primary dark:text-dark-primary mb-2">
-              {selectedSubcategory} Products
-            </h2>
-            <p className="text-light-secondary dark:text-dark-secondary mb-6">{selectedCategory} Collection</p>
-            
-            {/* Products Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {catalog[selectedCategory]
-                ?.find((sub: any) => sub.name === selectedSubcategory)
-                ?.products.map((product: any, index: number) => (
-                  <div 
-                    key={index}
-                    onClick={() => goToProduct(product)}
-                    className="bg-white dark:bg-brand-dark-card rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition-transform hover:-translate-y-1 hover:shadow-xl"
-                  >
-                    <div className="h-48 overflow-hidden">
-                      <ProductImage
-                        product={product}
-                        className="w-full h-full object-cover"
-                        alt={product.name}
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-lg font-bold text-light-primary dark:text-dark-primary mb-2 line-clamp-1">
-                        {product.name}
-                      </h3>
-                      <p className="text-light-secondary dark:text-dark-secondary text-sm line-clamp-2">
-                        {product.description}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              }
-            </div>
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-b-lg">
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {subcategoryData.products.length} products
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
         {layer === 'product' && selectedCategory && selectedSubcategory && selectedProduct && (
-          <div className="bg-white dark:bg-brand-dark-card rounded-xl shadow-lg overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="p-6">
-                <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden h-80 md:h-96">
-                  <ProductImage
-                    product={selectedProduct}
-                    className="w-full h-full object-contain"
-                    alt={selectedProduct.name}
-                  />
-                </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div className="md:flex">
+              <div className="md:w-1/3 h-64 md:h-auto relative">
+                <ProductImage 
+                  product={selectedProduct}
+                  className="w-full h-full"
+                  alt={selectedProduct.name}
+                />
               </div>
-              <div className="p-6">
-                <h3 className="text-2xl font-bold text-light-primary dark:text-dark-primary mb-3">
-                  {selectedProduct.name}
-                </h3>
-                <p className="text-sm text-brand-warm-orange mb-4">
-                  {selectedProduct.subcategory} / {selectedProduct.category}
-                </p>
-                <p className="text-light-secondary dark:text-dark-secondary mb-6">
-                  {selectedProduct.description}
-                </p>
+              <div className="p-6 md:w-2/3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{selectedProduct.name}</h2>
+                    {selectedProduct.brand && (
+                      <p className="text-brand-warm-orange font-medium">Brand: {selectedProduct.brand}</p>
+                    )}
+                    {selectedProduct.series && (
+                      <p className="text-gray-500 dark:text-gray-400">Series: {selectedProduct.series}</p>
+                    )}
+                    {selectedProduct.id && (
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Product ID: {selectedProduct.id}</p>
+                    )}
+            </div>
+                  <button 
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      navigate(`/products/${createSlug(selectedCategory)}/${createSlug(selectedSubcategory)}`);
+                    }}
+                    className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
+                    title="Back"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                </div>
                 
-                {/* Product Details */}
-                <div className="space-y-4">
-                  {selectedProduct.features && selectedProduct.features.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-light-primary dark:text-dark-primary mb-2">Features</h4>
-                      <ul className="list-disc ml-5 space-y-1 text-light-secondary dark:text-dark-secondary">
-                        {selectedProduct.features.map((feature: string, idx: number) => (
-                          <li key={idx}>{feature}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  
-                  {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-light-primary dark:text-dark-primary mb-2">Available Sizes</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedProduct.sizes.map((size: string, idx: number) => (
-                          <span key={idx} className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-sm">
-                            {size}
-                          </span>
-                        ))}
+                <div className="mt-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                  <p className="text-gray-600 dark:text-gray-300">{selectedProduct.description}</p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  <div>
+                    {selectedProduct.features && selectedProduct.features.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Features</h3>
+                        <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 product-features">
+                          {selectedProduct.features.map((feature: string, index: number) => (
+                            <li key={index}>{feature}</li>
+                          ))}
+                        </ul>
                       </div>
-                    </div>
-                  )}
-                  
-                  {selectedProduct.colors && selectedProduct.colors.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-light-primary dark:text-dark-primary mb-2">Available Colors</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedProduct.colors.map((color: string, idx: number) => (
-                          <span key={idx} className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-sm">
-                            {color}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {selectedProduct.models && selectedProduct.models.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-light-primary dark:text-dark-primary mb-2">Models</h4>
-                      <div className="space-y-2">
-                        {selectedProduct.models.map((model: any, idx: number) => (
-                          <div key={idx} className="flex items-center space-x-2">
-                            <Package className="h-4 w-4 text-brand-warm-orange" />
-                            <span className="text-light-primary dark:text-dark-primary">
-                              {model.model_no}: {model.name}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Additional product information */}
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    )}
+                    
                     {selectedProduct.material && (
-                      <div>
-                        <h4 className="text-sm text-light-secondary dark:text-dark-secondary">Material</h4>
-                        <p className="text-light-primary dark:text-dark-primary">{selectedProduct.material}</p>
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Material</h3>
+                        <p className="text-gray-600 dark:text-gray-300">{selectedProduct.material}</p>
                       </div>
                     )}
-                    {selectedProduct.capacity_l && (
-                      <div>
-                        <h4 className="text-sm text-light-secondary dark:text-dark-secondary">Capacity</h4>
-                        <p className="text-light-primary dark:text-dark-primary">{selectedProduct.capacity_l} L</p>
+                    
+                    {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Available Sizes</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProduct.sizes.map((size: string, index: number) => (
+                            <span key={index} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">{size}</span>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    {selectedProduct.outer_dimension && (
-                      <div>
-                        <h4 className="text-sm text-light-secondary dark:text-dark-secondary">Outer Dimensions</h4>
-                        <p className="text-light-primary dark:text-dark-primary">{selectedProduct.outer_dimension}</p>
+                    
+                    {selectedProduct.colors && selectedProduct.colors.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Available Colors</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProduct.colors.map((color: string, index: number) => (
+                            <span key={index} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">{color}</span>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    {selectedProduct.inner_dimension && (
-                      <div>
-                        <h4 className="text-sm text-light-secondary dark:text-dark-secondary">Inner Dimensions</h4>
-                        <p className="text-light-primary dark:text-dark-primary">{selectedProduct.inner_dimension}</p>
+                  </div>
+                  
+                  <div>
+                    {selectedProduct.variants && selectedProduct.variants.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Available Variants</h3>
+                        <ul className="list-disc list-inside text-gray-600 dark:text-gray-300">
+                          {Array.isArray(selectedProduct.variants) && selectedProduct.variants.map((variant: any, index: number) => (
+                            <li key={index}>{typeof variant === 'string' ? variant : variant.name || variant.size || variant.color || variant.model || JSON.stringify(variant).replace(/[{}"]/g, '')}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {selectedProduct.models && selectedProduct.models.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Available Models</h3>
+                        <ul className="list-disc list-inside text-gray-600 dark:text-gray-300">
+                          {selectedProduct.models.map((model: any, index: number) => (
+                            <li key={index}><span className="font-medium">{model.model_no}</span>: {model.name}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {selectedProduct.capacities && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Available Capacities</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProduct.capacities.map((capacity: string, index: number) => (
+                            <span key={index} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">{capacity}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedProduct.price_per_kg && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Price</h3>
+                        <p className="text-gray-600 dark:text-gray-300">₹{selectedProduct.price_per_kg} per kg</p>
+                      </div>
+                    )}
+                    
+                    {selectedProduct.moq && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Minimum Order Quantity</h3>
+                        <p className="text-gray-600 dark:text-gray-300">{selectedProduct.moq} units</p>
+                          </div>
+                        )}
+                    
+                    {selectedProduct.packaging && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Packaging</h3>
+                        <p className="text-gray-600 dark:text-gray-300">{selectedProduct.packaging}</p>
                       </div>
                     )}
                   </div>
                 </div>
                 
-                <div className="mt-8 flex space-x-4">
-                  <button
-                    onClick={() => window.location.href = '/contact'}
-                    className="px-6 py-3 bg-brand-warm-orange text-white rounded-lg hover:bg-brand-mustard transition-colors"
-                  >
-                    Inquire About This Product
+                {(selectedProduct.outer_dimension || selectedProduct.inner_dimension || selectedProduct.capacity_l) && (
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Specifications</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {selectedProduct.outer_dimension && (
+                        <div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Outer Dimension</p>
+                          <p className="text-gray-700 dark:text-gray-300">{selectedProduct.outer_dimension}</p>
+                        </div>
+                      )}
+                      {selectedProduct.inner_dimension && (
+                        <div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Inner Dimension</p>
+                          <p className="text-gray-700 dark:text-gray-300">{selectedProduct.inner_dimension}</p>
+                        </div>
+                      )}
+                      {selectedProduct.capacity_l && (
+                        <div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Capacity</p>
+                          <p className="text-gray-700 dark:text-gray-300">{selectedProduct.capacity_l} L</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-8">
+                  <button className="px-6 py-3 bg-brand-warm-orange text-white rounded-md hover:bg-brand-warm-orange/80 transition-colors cursor-pointer">
+                    Contact for Inquiry
                   </button>
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Product Layer - Product Cards */}
+        {layer === 'product' && selectedCategory && selectedSubcategory && !selectedProduct && (
+          <div className="grid-responsive">
+            {catalog[selectedCategory]
+              ?.find((sub: any) => sub.name === selectedSubcategory)
+              ?.products.map((product: any, index: number) => (
+                <div
+                  key={product.id}
+                  onClick={() => goToProduct(product)}
+                  className="product-card scale-hover cursor-pointer"
+                >
+                  <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
+                    <ProductImage 
+                      product={product}
+                      className="w-full h-full"
+                      alt={product.name}
+                      showLoader={false}
+                    />
+                    {product.brand && (
+                      <div className="absolute top-2 right-2 bg-brand-warm-orange text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {product.brand}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4 bg-white dark:bg-gray-800 rounded-b-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{product.name}</h3>
+                    
+                    {product.series && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Series: {product.series}</p>
+                    )}
+                    
+                    <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-3">{product.description}</p>
+                    
+                    {/* Show variants count or sizes */}
+                    {product.variants && Array.isArray(product.variants) && product.variants.length > 0 && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        {product.variants.length} variant{product.variants.length !== 1 ? 's' : ''} available
+                      </p>
+                    )}
+                    
+                    {product.sizes && product.sizes.length > 0 && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        {product.sizes.length} size{product.sizes.length !== 1 ? 's' : ''} available
+                      </p>
+                    )}
+                    
+                    {product.models && product.models.length > 0 && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        {product.models.length} model{product.models.length !== 1 ? 's' : ''} available
+                      </p>
+                    )}
+                    
+                    <button className="mt-3 px-4 py-2 bg-brand-warm-orange/10 text-brand-warm-orange rounded-md hover:bg-brand-warm-orange/20 transition-colors text-sm cursor-pointer">
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              ))}
           </div>
         )}
       </div>

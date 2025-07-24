@@ -5,32 +5,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    @apply bg-brand-cream text-light-primary dark:bg-brand-dark-bg dark:text-dark-primary transition-colors duration-300;
-  }
-  
-  h1, h2, h3, h4, h5, h6 {
-    @apply text-light-primary dark:text-dark-primary;
-  }
-  
-  p {
-    @apply text-light-secondary dark:text-dark-secondary;
-  }
-  
-  a {
-    @apply text-brand-warm-orange hover:text-brand-mustard transition-colors;
-  }
-  
-  input, textarea, select {
-    @apply bg-white dark:bg-dark-card text-light-primary dark:text-dark-primary border border-light-border dark:border-dark-border rounded-lg;
-  }
-  
-  button {
-    @apply transition-all duration-300;
-  }
-}
-
 /* Theme Variables */
 :root {
   /* Day Mode - Creamish White Theme */
@@ -39,7 +13,7 @@
   --brand-warm-orange: #FF6B35;
   --brand-mustard: #FFA726;
   --brand-burnt-coral: #FF7043;
-  --brand-tan: #DEB48E;
+  --brand-tan: #D7CCC8;
   --text-primary: #2D3748;
   --text-secondary: #4A5568;
   --bg-primary: #FCEED8;
@@ -69,6 +43,13 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
 }
 
 /* Smooth Animations */
@@ -102,85 +83,44 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-light-secondary dark:bg-dark-secondary;
+  background: var(--bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-brand-warm-orange rounded;
+  background: var(--brand-warm-orange);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-brand-mustard;
+  background: var(--brand-mustard);
 }
 
 /* Loading Animation */
 .loading-spinner {
-  @apply border-4 rounded-full w-8 h-8 animate-spin;
-  border-color: rgba(0, 0, 0, 0.1);
-  border-top-color: var(--brand-warm-orange);
-}
-
-.dark .loading-spinner {
-  border-color: rgba(255, 255, 255, 0.1);
-  border-top-color: var(--brand-warm-orange);
+  border: 3px solid var(--bg-secondary);
+  border-top: 3px solid var(--brand-warm-orange);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Card Styles */
 .product-card {
-  @apply bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl shadow-md transition-all duration-300;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 
 .product-card:hover {
-  @apply shadow-lg transform -translate-y-1;
-}
-
-/* Button Styles */
-.btn-primary {
-  @apply bg-brand-warm-orange text-white py-3 px-6 rounded-lg font-medium transition-all duration-300 border-none cursor-pointer;
-}
-
-.btn-primary:hover {
-  @apply bg-brand-mustard transform -translate-y-0.5;
-}
-
-.btn-secondary {
-  @apply bg-transparent text-brand-warm-orange border-2 border-brand-warm-orange py-3 px-6 rounded-lg font-medium transition-all duration-300 cursor-pointer;
-}
-
-.btn-secondary:hover {
-  @apply bg-brand-warm-orange text-white;
-}
-
-/* Input Styles */
-.input-field {
-  @apply w-full py-3 px-4 border-2 border-light-border dark:border-dark-border rounded-lg bg-white dark:bg-dark-card text-light-primary dark:text-dark-primary transition-all duration-300;
-}
-
-.input-field:focus {
-  @apply outline-none border-brand-warm-orange ring-2 ring-brand-warm-orange/20;
-}
-
-.dark .input-field {
-  @apply bg-dark-card border-dark-border text-dark-primary;
-}
-
-.dark .input-field::placeholder {
-  @apply text-gray-500;
-}
-
-/* Theme Toggle */
-.theme-toggle {
-  @apply transition-all duration-300;
-}
-
-.theme-toggle:hover {
-  @apply transform rotate-12 bg-brand-warm-orange/10;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 /* Search Bar Styles */
@@ -202,6 +142,15 @@
   overflow-y: auto;
 }
 
+/* Theme Toggle */
+.theme-toggle {
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  transform: rotate(180deg);
+}
+
 /* Responsive Grid */
 .grid-responsive {
   display: grid;
@@ -219,6 +168,56 @@
   .grid-responsive {
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   }
+}
+
+/* Button Styles */
+.btn-primary {
+  background: var(--brand-warm-orange);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--brand-mustard);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--brand-warm-orange);
+  border: 2px solid var(--brand-warm-orange);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: var(--brand-warm-orange);
+  color: white;
+}
+
+/* Input Styles */
+.input-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--brand-warm-orange);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
 }
 
 /* Breadcrumb Styles */
@@ -534,16 +533,11 @@
 .dark .input-field {
   background-color: #1F2937;
   border-color: #374151;
-  color: #E5E7EB;
-}
-
-.dark .input-field::placeholder {
-  color: #9CA3AF;
+  color: white;
 }
 
 .dark .search-results {
   background-color: #1F2937;
-  border-color: #374151;
 }
 
 .dark .breadcrumb-item {
@@ -557,6 +551,22 @@
 .dark .loading-spinner {
   border-color: rgba(255, 255, 255, 0.1);
   border-left-color: #FF6B35;
+}
+
+/* Product image loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #ff8a00; /* brand warm orange */
+  animation: spin 1s linear infinite;
 }
 
 /* For dark mode */
