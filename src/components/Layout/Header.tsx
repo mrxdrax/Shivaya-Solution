@@ -31,7 +31,7 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-brand-dark-bg backdrop-blur-sm shadow-sm border-b border-light-border dark:border-dark-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -41,7 +41,7 @@ const Header: React.FC = () => {
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
+              <span className="text-xl font-bold text-light-primary dark:text-dark-primary">
                 {COMPANY_INFO.name}
               </span>
             </Link>
@@ -55,7 +55,7 @@ const Header: React.FC = () => {
                   className={`text-base font-medium transition-colors ${
                     isActiveRoute(item.path)
                       ? 'text-brand-warm-orange border-b-2 border-brand-warm-orange'
-                      : 'text-gray-700 dark:text-gray-300 hover:text-brand-warm-orange dark:hover:text-brand-warm-orange'
+                      : 'text-light-primary dark:text-dark-primary hover:text-brand-warm-orange'
                   }`}
                 >
                   {item.name}
@@ -71,9 +71,9 @@ const Header: React.FC = () => {
                 aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
               >
                 {theme === 'light' ? (
-                  <Moon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                  <Moon className="h-5 w-5 text-light-primary" />
                 ) : (
-                  <Sun className="h-5 w-5 text-gray-300" />
+                  <Sun className="h-5 w-5 text-brand-warm-orange" />
                 )}
               </button>
             </div>
@@ -85,9 +85,9 @@ const Header: React.FC = () => {
               aria-label="Toggle menu"
             >
               {isMenuOpen ? (
-                <X className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+                <X className="h-6 w-6 text-light-primary dark:text-dark-primary" />
               ) : (
-                <Menu className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+                <Menu className="h-6 w-6 text-light-primary dark:text-dark-primary" />
               )}
             </button>
           </div>
@@ -99,7 +99,7 @@ const Header: React.FC = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
+            className="md:hidden bg-white dark:bg-brand-dark-bg border-t border-light-border dark:border-dark-border"
           >
             <div className="px-4 py-2 space-y-1">
               {navigation.map((item) => (
@@ -109,7 +109,7 @@ const Header: React.FC = () => {
                   className={`block px-3 py-2 rounded-lg text-base font-medium transition-colors ${
                     isActiveRoute(item.path)
                       ? 'text-brand-warm-orange bg-brand-warm-orange/10'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      : 'text-light-primary dark:text-dark-primary hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -120,12 +120,12 @@ const Header: React.FC = () => {
               <div className="flex items-center justify-between px-3 py-2">
                 <button
                   onClick={toggleTheme}
-                  className="flex items-center space-x-2 text-gray-700 dark:text-gray-300"
+                  className="flex items-center space-x-2 text-light-primary dark:text-dark-primary"
                 >
                   {theme === 'light' ? (
                     <Moon className="h-5 w-5" />
                   ) : (
-                    <Sun className="h-5 w-5" />
+                    <Sun className="h-5 w-5 text-brand-warm-orange" />
                   )}
                   <span>Toggle Theme</span>
                 </button>
